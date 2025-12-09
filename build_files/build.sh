@@ -22,3 +22,8 @@ dnf5 install -y tmux
 #### Example for enabling a System Unit File
 
 systemctl enable podman.socket
+
+# install VirtualBox using script from bazzite-virtualbox
+curl -L -o /tmp/vbox.sh "https://raw.githubusercontent.com/ettfemnio/bazzite-virtualbox/refs/heads/main/build.sh"
+chmod +x /tmp/vbox.sh
+/tmp/vbox.sh
