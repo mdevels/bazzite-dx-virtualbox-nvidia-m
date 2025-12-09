@@ -1,5 +1,5 @@
 ---
-name: Build container image
+name: Build bazzite-dx-virtualbox-nvidia-m
 on:
   pull_request:
     branches:
