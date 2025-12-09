@@ -11,6 +11,18 @@ set -ouex pipefail
 
 # this installs a package from fedora repos
 dnf5 install -y tmux 
+dnf5 install -y \
+  chromium \
+  ddrescue \
+  partclone \
+  kde-partitionmanager \
+  kompare \
+  konsole \
+  krusader 
+
+# Clean up dnf caches to keep image size smaller
+dnf5 clean all
+rm -rf /var/cache/dnf /var/cache/yum
 
 # Use a COPR Example:
 #
