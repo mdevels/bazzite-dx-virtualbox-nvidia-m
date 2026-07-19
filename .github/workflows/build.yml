@@ -38,18 +38,11 @@ jobs:
     steps:
       - name: Prepare environment
         run: |
-          # Lowercase the image uri
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
       - name: Checkout
         uses: actions/checkout@v7
-
-      # Optional: Maximize build space if needed
-      # - name: Maximize build space
-      #   uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
-      #   with:
-      #     remove-codeql: true
 
       - name: Mount BTRFS for podman storage
         id: container-storage-action
@@ -99,48 +92,35 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /usr/local/share/powershell
           sudo rm -rf /usr/local/share/chromium
-          sudo docker system prune -af --volumes || true
-          sudo rm -rf /var/lib/docker || true
+          sudo podman system prune -af --volumes || true
           df -h
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      - name: Login to container registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u ${{ github.actor }} --password-stdin ghcr.io
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Build image with Buildah
+        run: |
+          buildah bud \
+            --tag ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+            --file ./Containerfile \
+            .
+
+      - name: Tag additional images
+        run: |
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            if [[ "$tag" != "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" ]]; then
+              podman tag ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} $tag
+            fi
+          done
+
+      - name: Push image to GHCR
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            podman push $tag
+          done
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        id: build_push
-        with:
-          context: .
-          file: ./Containerfile
-          push: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
-
-      # Optional: Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
-      # - name: Run Rechunker
-      #   id: rechunk
-      #   uses: hhd-dev/rechunk@f153348d8100c1f504dec435460a0d7baf11a9d2
-      #   with:
-      #     rechunk: 'ghcr.io/hhd-dev/rechunk:v1.0.1'
-      #     ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-      #     prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-      #     skip_compression: true
-      #     labels: ${{ steps.metadata.outputs.labels }}
-
-      # This section is optional and only needs to be enabled if you plan on distributing
-      # your project for others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -150,7 +130,7 @@ jobs:
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_FULL:$tag
+            cosign sign -y --key env://COSIGN_PRIVATE_KEY $tag
           done
         env:
           COSIGN_EXPERIMENTAL: false
