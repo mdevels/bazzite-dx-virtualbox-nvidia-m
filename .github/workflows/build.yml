@@ -118,7 +118,8 @@ jobs:
 
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@v3
+        uses: redhat-actions/buildah-build@c3c0f1f2f3b8c6a4f0c0f8a2f9c7e2d3b4a1e5f0
+
         #old:
         #uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
