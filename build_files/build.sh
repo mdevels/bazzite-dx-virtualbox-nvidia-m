@@ -2,6 +2,10 @@
 
 set -ouex pipefail
 
+PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+set -x
+trap 'echo "FAILED at ${BASH_SOURCE##*/}:${LINENO}: ${BASH_COMMAND}" >&2' ERR
+
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
