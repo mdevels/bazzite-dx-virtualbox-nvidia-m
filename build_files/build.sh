@@ -21,8 +21,9 @@ dnf5 install -y \
   partclone \
   kde-partitionmanager \
   kompare \
-  konsole \
-  krusader 
+  krusader \
+  wavemon \
+  wireshark
 
 # Clean up dnf caches to keep image size smaller
 dnf5 clean all
