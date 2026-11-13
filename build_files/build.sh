@@ -40,6 +40,11 @@ rm -rf /var/cache/dnf /var/cache/yum
 
 systemctl enable podman.socket
 
+# Remove conflicting Logitech Trueforce package before installing DKMS for VirtualBox
+if rpm -q logitech-trueforce &>/dev/null; then
+  dnf5 remove -y logitech-trueforce
+fi
+
 # install VirtualBox using script from bazzite-virtualbox
 curl -L -o /tmp/vbox.sh "https://raw.githubusercontent.com/mdevels/bazzite-virtualbox-m/refs/heads/main/build.sh"
 chmod +x /tmp/vbox.sh
