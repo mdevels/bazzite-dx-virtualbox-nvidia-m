@@ -6,14 +6,7 @@ PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
 set -x
 trap 'echo "FAILED at ${BASH_SOURCE##*/}:${LINENO}: ${BASH_COMMAND}" >&2' ERR
 
-### Install packages
-
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
-
-# this installs a package from fedora repos
+### 1. Install standard Fedora packages
 dnf5 install -y tmux 
 dnf5 install -y \
   chromium \
@@ -25,27 +18,50 @@ dnf5 install -y \
   wavemon \
   wireshark
 
-# Clean up dnf caches to keep image size smaller
-dnf5 clean all
-rm -rf /var/cache/dnf /var/cache/yum
-
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
-
-#### Example for enabling a System Unit File
-
+# Enable Podman socket
 systemctl enable podman.socket
 
-# Remove conflicting Logitech Trueforce package before installing DKMS for VirtualBox
-if rpm -q logitech-trueforce &>/dev/null; then
-  dnf5 remove -y logitech-trueforce
-fi
+### 2. Install VirtualBox & Kernel Modules from RPM Fusion
+RELEASE="$(rpm -E %fedora)"
+KERNEL_VER="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel | head -n 1)"
 
-# install VirtualBox using script from bazzite-virtualbox
-curl -L -o /tmp/vbox.sh "https://raw.githubusercontent.com/mdevels/bazzite-virtualbox-m/refs/heads/main/build.sh"
-chmod +x /tmp/vbox.sh
-/tmp/vbox.sh
+# Ensure RPM Fusion Free & Nonfree repos are enabled
+dnf5 install -y \
+  "https://rpmfusion.org{RELEASE}.noarch.rpm" \
+  "https://rpmfusion.org{RELEASE}.noarch.rpm"
+
+# Install VirtualBox, akmods, and matching kernel headers
+dnf5 install -y VirtualBox akmod-VirtualBox "kernel-devel-${KERNEL_VER}"
+
+# Compile VirtualBox kernel modules for the container's target kernel
+akmods --force --kernels "${KERNEL_VER}"
+
+### 3. Install Matching Oracle VirtualBox Extension Pack
+VBOX_VER="$(rpm -q --qf '%{VERSION}' VirtualBox)"
+EXTPACK_NAME="Oracle_VirtualBox_Extension_Pack-${VBOX_VER}.vbox-extpack"
+EXTPACK_URL="https://virtualbox.org{VBOX_VER}/${EXTPACK_NAME}"
+SUMS_URL="https://virtualbox.org{VBOX_VER}/SHA256SUMS"
+
+curl -fL -o "/tmp/${EXTPACK_NAME}" "${EXTPACK_URL}"
+HASH="$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)"
+
+# Note: RPM Fusion installs VirtualBox binaries into /usr/lib64/virtualbox
+/usr/lib64/virtualbox/VBoxExtPackHelperApp install \
+  --base-dir /usr/lib64/virtualbox/ExtensionPacks \
+  --cert-dir /usr/share/virtualbox/ExtPackCertificates \
+  --name "Oracle VirtualBox Extension Pack" \
+  --tarball "/tmp/${EXTPACK_NAME}" \
+  --sha-256 "${HASH}"
+
+### 4. Auto-load VirtualBox kernel modules at boot
+mkdir -p /usr/lib/modules-load.d
+cat > /usr/lib/modules-load.d/bazzite-virtualbox.conf << EOF
+# load virtualbox kernel drivers
+vboxdrv
+vboxnetflt
+vboxnetadp
+EOF
+
+### 5. Clean up dnf caches to keep image size smaller
+dnf5 clean all
+rm -rf /var/cache/dnf /var/cache/yum
