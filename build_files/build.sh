@@ -21,6 +21,7 @@ dnf5 install -y \
 # Enable Podman socket
 systemctl enable podman.socket
 
+
 ### 2. Install VirtualBox & Kernel Modules from RPM Fusion
 KERNEL_VER=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel | head -n 1)
 
@@ -50,8 +51,6 @@ setpriv --reuid=akmods --regid=akmods --init-groups \
 dnf5 install -y /tmp/akmods-build/kmod-VirtualBox-*.rpm
 
 
-
-
 ### 3. Install Matching Oracle VirtualBox Extension Pack
 VBOX_VER=$(rpm -q --qf '%{VERSION}' VirtualBox)
 EXTPACK_NAME="Oracle_VirtualBox_Extension_Pack-${VBOX_VER}.vbox-extpack"
@@ -62,10 +61,16 @@ SUMS_URL="https://${VBOX_HOST}/virtualbox/${VBOX_VER}/SHA256SUMS"
 curl -fL -o "/tmp/${EXTPACK_NAME}" "${EXTPACK_URL}"
 HASH=$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)
 
-# RPM Fusion does not create ExtPackCertificates or ExtensionPacks directories by default
-# Install Extension Pack headlessly via VBoxManage (bypasses missing RPM Fusion cert dir)
-mkdir -p /usr/lib64/virtualbox/ExtensionPacks
-VBoxManage extpack install --replace "/tmp/${EXTPACK_NAME}" --accept-license="${HASH}"
+# Verify SHA256 checksum
+echo "${HASH}  /tmp/${EXTPACK_NAME}" | sha256sum -c -
+
+# Extract directly into VirtualBox's ExtensionPacks directory (avoids XPCOM/cert issues in container builds)
+EXTPACK_DIR="/usr/lib64/virtualbox/ExtensionPacks/Oracle_VirtualBox_Extension_Pack"
+rm -rf "${EXTPACK_DIR}"
+mkdir -p "${EXTPACK_DIR}"
+tar -xzf "/tmp/${EXTPACK_NAME}" -C "${EXTPACK_DIR}"
+chown -R root:root "${EXTPACK_DIR}"
+chmod -R a+rX,go-w "${EXTPACK_DIR}"
 
 
 ### 4. Auto-load VirtualBox kernel modules at boot
