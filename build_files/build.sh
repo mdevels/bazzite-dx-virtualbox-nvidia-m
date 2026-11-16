@@ -22,31 +22,25 @@ dnf5 install -y \
 systemctl enable podman.socket
 
 ### 2. Install VirtualBox & Kernel Modules from RPM Fusion
-RELEASE="$(rpm -E %fedora)"
-KERNEL_VER="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel | head -n 1)"
+KERNEL_VER=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel | head -n 1)
 
-# Ensure RPM Fusion Free & Nonfree repos are enabled
 dnf5 install -y \
-  "https://rpmfusion.org(rpm -E %fedora).noarch.rpm" \
-  "https://rpmfusion.org(rpm -E %fedora).noarch.rpm"
+  https://rpmfusion.org \
+  https://rpmfusion.org
 
-
-# Install VirtualBox, akmods, and matching kernel headers
 dnf5 install -y VirtualBox akmod-VirtualBox "kernel-devel-${KERNEL_VER}"
 
-# Compile VirtualBox kernel modules for the container's target kernel
 akmods --force --kernels "${KERNEL_VER}"
 
 ### 3. Install Matching Oracle VirtualBox Extension Pack
-VBOX_VER="$(rpm -q --qf '%{VERSION}' VirtualBox)"
+VBOX_VER=$(rpm -q --qf '%{VERSION}' VirtualBox)
 EXTPACK_NAME="Oracle_VirtualBox_Extension_Pack-${VBOX_VER}.vbox-extpack"
 EXTPACK_URL="https://virtualbox.org{VBOX_VER}/${EXTPACK_NAME}"
 SUMS_URL="https://virtualbox.org{VBOX_VER}/SHA256SUMS"
 
 curl -fL -o "/tmp/${EXTPACK_NAME}" "${EXTPACK_URL}"
-HASH="$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)"
+HASH=$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)
 
-# Note: RPM Fusion installs VirtualBox binaries into /usr/lib64/virtualbox
 /usr/lib64/virtualbox/VBoxExtPackHelperApp install \
   --base-dir /usr/lib64/virtualbox/ExtensionPacks \
   --cert-dir /usr/share/virtualbox/ExtPackCertificates \
@@ -57,12 +51,11 @@ HASH="$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)"
 ### 4. Auto-load VirtualBox kernel modules at boot
 mkdir -p /usr/lib/modules-load.d
 cat > /usr/lib/modules-load.d/bazzite-virtualbox.conf << EOF
-# load virtualbox kernel drivers
 vboxdrv
 vboxnetflt
 vboxnetadp
 EOF
 
-### 5. Clean up dnf caches to keep image size smaller
+### 5. Clean up dnf caches
 dnf5 clean all
 rm -rf /var/cache/dnf /var/cache/yum
