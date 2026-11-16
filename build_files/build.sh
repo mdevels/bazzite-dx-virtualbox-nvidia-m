@@ -27,8 +27,9 @@ KERNEL_VER="$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel | head -n 1)"
 
 # Ensure RPM Fusion Free & Nonfree repos are enabled
 dnf5 install -y \
-  "https://rpmfusion.org{RELEASE}.noarch.rpm" \
-  "https://rpmfusion.org{RELEASE}.noarch.rpm"
+  "https://rpmfusion.org(rpm -E %fedora).noarch.rpm" \
+  "https://rpmfusion.org(rpm -E %fedora).noarch.rpm"
+
 
 # Install VirtualBox, akmods, and matching kernel headers
 dnf5 install -y VirtualBox akmod-VirtualBox "kernel-devel-${KERNEL_VER}"
