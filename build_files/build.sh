@@ -63,14 +63,10 @@ curl -fL -o "/tmp/${EXTPACK_NAME}" "${EXTPACK_URL}"
 HASH=$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)
 
 # RPM Fusion does not create ExtPackCertificates or ExtensionPacks directories by default
-mkdir -p /usr/lib64/virtualbox/ExtensionPacks /usr/share/virtualbox/ExtPackCertificates
+# Install Extension Pack headlessly via VBoxManage (bypasses missing RPM Fusion cert dir)
+mkdir -p /usr/lib64/virtualbox/ExtensionPacks
+VBoxManage extpack install --replace "/tmp/${EXTPACK_NAME}" --accept-license="${HASH}"
 
-/usr/lib64/virtualbox/VBoxExtPackHelperApp install \
-  --base-dir /usr/lib64/virtualbox/ExtensionPacks \
-  --cert-dir /usr/share/virtualbox/ExtPackCertificates \
-  --name "Oracle VirtualBox Extension Pack" \
-  --tarball "/tmp/${EXTPACK_NAME}" \
-  --sha-256 "${HASH}"
 
 ### 4. Auto-load VirtualBox kernel modules at boot
 mkdir -p /usr/lib/modules-load.d
