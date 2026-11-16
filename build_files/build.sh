@@ -38,15 +38,17 @@ dnf5 install -y --setopt=tsflags=noscripts akmod-VirtualBox
 # 3. Now install VirtualBox normally (akmod-VirtualBox is already satisfied, so its user/service scriptlets run cleanly)
 dnf5 install -y VirtualBox
 
-# 4. Build the kernel module RPM as the unprivileged 'akmods' user and install it
+# 4. Build the kernel module RPM as the unprivileged 'akmods' user (without PAM session) and install it
 mkdir -p /tmp/akmods-build
 chown akmods:akmods /tmp/akmods-build
-runuser -u akmods -- akmodsbuild \
+setpriv --reuid=akmods --regid=akmods --init-groups \
+  akmodsbuild \
   --kernels "${KERNEL_VER}" \
   --outputdir /tmp/akmods-build \
   /usr/src/akmods/VirtualBox-kmod.latest
 
 dnf5 install -y /tmp/akmods-build/kmod-VirtualBox-*.rpm
+
 
 
 
