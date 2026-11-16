@@ -62,6 +62,9 @@ SUMS_URL="https://${VBOX_HOST}/virtualbox/${VBOX_VER}/SHA256SUMS"
 curl -fL -o "/tmp/${EXTPACK_NAME}" "${EXTPACK_URL}"
 HASH=$(curl -fsL "${SUMS_URL}" | grep "${EXTPACK_NAME}" | cut -d' ' -f1)
 
+# RPM Fusion does not create ExtPackCertificates or ExtensionPacks directories by default
+mkdir -p /usr/lib64/virtualbox/ExtensionPacks /usr/share/virtualbox/ExtPackCertificates
+
 /usr/lib64/virtualbox/VBoxExtPackHelperApp install \
   --base-dir /usr/lib64/virtualbox/ExtensionPacks \
   --cert-dir /usr/share/virtualbox/ExtPackCertificates \
