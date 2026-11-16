@@ -22,7 +22,6 @@ dnf5 install -y \
 systemctl enable podman.socket
 
 ### 2. Install VirtualBox & Kernel Modules from RPM Fusion
-### 2. Install VirtualBox & Kernel Modules from RPM Fusion
 KERNEL_VER=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel | head -n 1)
 
 RPMFUSION_MIRROR="mirrors.rpmfusion.org"
@@ -30,9 +29,22 @@ dnf5 install -y \
   "https://${RPMFUSION_MIRROR}/free/fedora/rpmfusion-free-release-45.noarch.rpm" \
   "https://${RPMFUSION_MIRROR}/nonfree/fedora/rpmfusion-nonfree-release-45.noarch.rpm"
 
-dnf5 install -y VirtualBox akmod-VirtualBox "kernel-devel-${KERNEL_VER}"
+# Install VirtualBox and build tools normally so user/systemd scriptlets run
+dnf5 install -y VirtualBox akmods kmodtool rpm-build rpmdevtools "kernel-devel-${KERNEL_VER}"
 
-akmods --force --kernels "${KERNEL_VER}"
+# Install akmod-VirtualBox without triggering its broken root %post scriptlet
+dnf5 install -y --setopt=tsflags=noscripts akmod-VirtualBox
+
+# Build the kernel module RPM as the unprivileged 'akmods' user and install it
+mkdir -p /tmp/akmods-build
+chown akmods:akmods /tmp/akmods-build
+runuser -u akmods -- akmodsbuild \
+  --kernels "${KERNEL_VER}" \
+  --outputdir /tmp/akmods-build \
+  /usr/src/akmods/VirtualBox-kmod.latest
+
+dnf5 install -y /tmp/akmods-build/kmod-VirtualBox-*.rpm
+
 
 ### 3. Install Matching Oracle VirtualBox Extension Pack
 VBOX_VER=$(rpm -q --qf '%{VERSION}' VirtualBox)
