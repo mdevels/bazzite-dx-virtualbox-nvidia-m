@@ -28,11 +28,6 @@ rpm-ostree rebase ostree-image-signed:docker://ghcr.io/mdevels/bazzite-dx-virtua
 
 ---
 
-# Credits
-
-[Ettfemnio’s VirtualBox install script](https://github.com/ettfemnio/bazzite-virtualbox/) does the heavy lifting here — full credit to him.
-
----
 
 # License Info
 
