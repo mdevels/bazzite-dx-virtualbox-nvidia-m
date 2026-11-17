@@ -3,7 +3,7 @@
 [![bazzite-dx-virtualbox-nvidia-m](https://github.com/mdevels/bazzite-dx-virtualbox-nvidia-m/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mdevels/bazzite-dx-virtualbox-nvidia-m/actions/workflows/build.yml)
 
 This is a slightly modified image of **bazzite-dx**.  
-It was built using the [ublue-os image template](https://github.com/ublue-os/image-template) and [ettfemnio’s VirtualBox install script](https://github.com/ettfemnio/bazzite-virtualbox/).  
+It was built using the [ublue-os image template](https://github.com/ublue-os/image-template) and [VirtualBox packages from rpmfusion](https://rpmfusion.org/).  
 The base image is **bazzite-dx-nvidia** (KDE Plasma).
 
 ---
