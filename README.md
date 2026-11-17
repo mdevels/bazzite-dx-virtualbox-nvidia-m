@@ -3,7 +3,7 @@
 [![bazzite-dx-virtualbox-nvidia-m](https://github.com/mdevels/bazzite-dx-virtualbox-nvidia-m/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mdevels/bazzite-dx-virtualbox-nvidia-m/actions/workflows/build.yml)
 
 This is a slightly modified image of **bazzite-dx**.  
-It was built using the [ublue-os image template](https://github.com/ublue-os/image-template) and [ettfemnio’s VirtualBox install script](https://github.com/ettfemnio/bazzite-virtualbox/).  
+It was built using the [ublue-os image template](https://github.com/ublue-os/image-template) and [VirtualBox packages from rpmfusion](https://rpmfusion.org/).  
 The base image is **bazzite-dx-nvidia** (KDE Plasma).
 
 ---
@@ -12,7 +12,8 @@ The base image is **bazzite-dx-nvidia** (KDE Plasma).
 
 - VirtualBox, its kernel drivers, and the Extension Pack installed  
 - Extra disk utilities: `ddrescue`, `partclone`  
-- Extra KDE packages: `kde-partitionmanager`, `kompare`, `konsole`, `krusader`  
+- Extra KDE packages: `kde-partitionmanager`, `kompare`, `krusader`
+- Extra networking packages: `wavemon`, `wireshark`
 - Non‑sandboxed Chromium installed (for WebSerial support)
 
 ---
@@ -27,11 +28,6 @@ rpm-ostree rebase ostree-image-signed:docker://ghcr.io/mdevels/bazzite-dx-virtua
 
 ---
 
-# Credits
-
-[Ettfemnio’s VirtualBox install script](https://github.com/ettfemnio/bazzite-virtualbox/) does the heavy lifting here — full credit to him.
-
----
 
 # License Info
 
