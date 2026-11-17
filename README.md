@@ -12,7 +12,8 @@ The base image is **bazzite-dx-nvidia** (KDE Plasma).
 
 - VirtualBox, its kernel drivers, and the Extension Pack installed  
 - Extra disk utilities: `ddrescue`, `partclone`  
-- Extra KDE packages: `kde-partitionmanager`, `kompare`, `konsole`, `krusader`  
+- Extra KDE packages: `kde-partitionmanager`, `kompare`, `krusader`
+- Extra networking packages: `wavemon`, `wireshark`
 - Non‑sandboxed Chromium installed (for WebSerial support)
 
 ---
